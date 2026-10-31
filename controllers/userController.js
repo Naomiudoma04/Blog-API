@@ -2,8 +2,10 @@
 const { User, Post, sequelize } = require('../models');
 
 
-const toTitleCase = (str) =>
-  str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+const toTitleCase = (str) => {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
 
 const createUser = async (req, res) => {
   try {
@@ -16,8 +18,8 @@ const createUser = async (req, res) => {
         }
 
         const newUser = await User.create( {
-            firstName, //toTitleCase(firstName),
-            lastName, //: toTitleCase(lastName),
+            firstName: toTitleCase(firstName),
+            lastName: toTitleCase(lastName),
             email:  email.toLowerCase(),
             gender
         } );
@@ -38,7 +40,7 @@ const getUsers = async (req, res) => {
   try {
     const users = await User.findAll();
        res.status(200).json({
-          message: 'Users retrieved successfully',
+          message: `All ${users.length} users retrieved successfully`,
           data: users
     });
   } catch (err) {
@@ -99,21 +101,17 @@ const updateUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
   try {
-    const deleted = await sequelize.transaction(async (transaction) => {
-      const user = await User.findByPk(req.params.id, { transaction });
-      if (!user) return false;
+    
+      const user = await User.findByPk(req.params.id);
+      if (!user) 
+        return res.status(404).json({
+       message: 'User not found'
+       });;
 
       await Post.destroy({
-        where: { userId: user.id },
-        transaction
+        where: { userId: user.id }
       });
-      await user.destroy({ transaction });
-      return true;
-    });
-
-    if (!deleted) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+      await user.destroy() ;
 
     res.status(200).json({ 
       message: 'User and associated posts deleted'
@@ -123,8 +121,8 @@ const deleteUser = async (req, res) => {
         message: 'Error deleting user',
         error: err.message
      });
-  }
-};
+    };
+  };
 
 
 

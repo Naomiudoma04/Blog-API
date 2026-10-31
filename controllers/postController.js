@@ -1,5 +1,7 @@
 const { Post, User } = require('../models');
 
+
+
 const createPost = async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -11,6 +13,13 @@ const createPost = async (req, res) => {
     const { title, content } = req.body;
    
     const post = await Post.create({ title, content, userId: user.id });
+    await post.reload({
+      include: [{
+        model: User,
+        as: 'users',
+        attributes: ['firstName', 'lastName']
+      }]
+    });
 
     if (!post) {
       return res.status(404).json({
@@ -78,9 +87,7 @@ const updatePost = async (req, res) => {
     if (!post) {
       const user = await User.findByPk(postId);
       return res.status(404).json({
-        message: user
-          ? 'This ID belongs to a user. Use a post ID from GET /postList.'
-          : 'Post not found. Use a post ID from GET /postList.'
+        message: 'Post not found'
       });
     }
 
